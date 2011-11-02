@@ -7,9 +7,10 @@ use 5.010;
 use Carp;
 use LWP::UserAgent;
 use JSON;
+use Data::Dumper;
 
 my $VERSION;
-$VERSION=0.20111026;
+$VERSION=0.20111102;
 
 sub new{
 	my $class = shift;
@@ -59,10 +60,25 @@ sub new{
 	return($self); 
 }
 
+sub getHash(){
+	my $self = shift;
+	my $url = shift;
+	my $response = $self->{_userAgent}->get($url);
+	my $json = $response->content;
+	my $data = from_json($json);
+	return $data;
+
+}
+
 sub getUsers(){
 	my $self = shift;
-	my $url = $self->{'_url'}."/users.json";
-	my $response = $self->{_userAgent}->get($url);
-	return $response->as_string();
+	my $url = $self->{_url}."/users.json";
+	my $data = $self->getHash($url);
+	print Dumper($data);
 }
+
+
+
+
 1;
+
