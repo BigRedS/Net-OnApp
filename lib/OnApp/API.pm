@@ -63,7 +63,6 @@ sub new{
 
 sub getHash(){
 	my $self = shift;
-<<<<<<< HEAD
 	my %args = @_;
 	my $url = $self->{'_url'}."/users.json";
 	print "<$url>";
@@ -115,7 +114,6 @@ sub _applyFilter{
 #	}
 			
 	if ( exists($args{'andFilter'}) ){
-		say "And Filtering";
 		$data = $self->_applyAndFilter(
 			data	=> $data,
 			filter	=> $args{'andFilter'}
@@ -130,8 +128,6 @@ sub _applyAndFilter{
 	my $self = shift;
 	my %args = @_;
 	my %data = %{ $args{'data'} };
-	say "AND in the function";
-	say "AND still here";
 
 	my %filter = %{ $args{'filter'} };
 
@@ -197,7 +193,6 @@ sub _getUrl{
 	my $url = $self->{'_url'}.$uri;
 	return $url;
 
-=======
 	my $url = shift;
 	my $response = $self->{_userAgent}->get($url);
 	my $json = $response->content;
@@ -211,7 +206,6 @@ sub getUsers(){
 	my $url = $self->{_url}."/users.json";
 	my $data = $self->getHash($url);
 	print Dumper($data);
->>>>>>> fe9d66620fcbf55853fe0e1fb0c7ee9344dd130c
 }
 
 
