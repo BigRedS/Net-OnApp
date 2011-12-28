@@ -1,0 +1,101 @@
+# NAME
+
+OnApp::API - Perlish interface to OnApp API
+
+# SYNOPSIS
+
+    use OnApp::API;
+    my $vm = OnAPP::API->(
+           api\_email => $email,
+	 api\_key   => $key,
+	 api\_url   => $url,
+    );
+
+    my $hashOfVms = $vm->getVMs();
+
+# CONSTRUCTOR AND STARTUP
+
+### new()
+
+Creates and returns an OnApp::API object. Expects authentication and endpoint details:
+
+    my $vm = OnApp::API->new)
+          api\_email => "name@domain.com",
+          api\_key	  => "supersecretkey",
+          api\_url   => "url.of.the.onapp.box",
+    );
+
+You can, if you prefer, supply api\_email with an api\_username and api\_key with an api password.
+
+# METHODS
+
+## VMs
+
+### getVMs()
+
+Returns a reference to a hash-of-hashes whose keys are the hostnames of the VMs:
+
+    my %vms = %{ $vm->getVMs };
+
+You may provide some criteria with which to filter the machines:
+
+    my $vms = vm->getVMs(
+            andFilter => {
+                    operating\_system => "linux",
+                    admin\_note       => "temporary"
+            }
+     )
+
+This is a ludicrously crude filter, currently. See the docs for \_applyFilter in the
+private methods section.
+
+# PRIVATE METHODS
+
+Don't use these.
+
+## _applyFilter, _applyAndFilter, _applyOrFilter
+
+\_applyFilter is passed three hashrefs:
+
+    data:      some data to filter
+    andFilter: a set of filtering criteria
+
+    It calls \_applyAndFilter (and will, in the future, call \_applyOrFilter)
+    to do the filtering. Currently, it's a bit crude. The expectation is that
+    C<data> will be a hash of hashes. Each of its constituent hashes is kept if, 
+    and only if, each of its keys mentioned in C<andFilter> case-insensitively
+    matches the corresponding value in C<andFilter>
+
+## _getRef
+
+Given a full URL (as returned by `\_getURL`, returns a hashref containing
+The data OnAPP returned.
+
+## _getUrl
+Used to create URLs from easy-to-remember names. For example, to get
+the correct URL for the API to return a list of users, you can do
+
+    \_getURL("get", "users");
+
+These URLs are then passed to `\_getRef`.
+
+## _getHash
+
+Deprecated already. In favour of `\_getRef`. 'cause references are cool.
+
+# SEE ALSO
+
+[http://cdn.onapp.com/files/docs/onapp\_cloud\_2-3\_api\_guide\_v1-3.pdf](http://cdn.onapp.com/files/docs/onapp\_cloud\_2-3\_api\_guide\_v1-3.pdf)
+
+# COPYRIGHT
+
+Copyright 2011 Avi Greenbury (bigreds)
+
+All right reserved. This program is free software; you can redistribute it and/or modify 
+it under the same terms as Perl itself or, at your option, under the BSD license.
+
+# AUTHOR
+  bigreds (Avi Greenbury) bigreds@cpan.org
+=cut
+
+1;
