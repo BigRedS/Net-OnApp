@@ -49,11 +49,41 @@ You may provide some criteria with which to filter the machines:
 This is a ludicrously crude filter, currently. See the docs for _applyFilter in the
 private methods section.
 
+## TEMPLATES
+
+### getTemplates()
+
+Returns a hashref describing the templates. This is a hash-of-hashes, where the keys
+are the ID of the template described in the value.
+
+
+
 # PRIVATE METHODS
 
 Don't use these.
 
+## _tidyData()
+
+Makes the data structure more sane. It comes out of the API as a hash of arrays, each 
+containing a single element which is a hash reference representing whatever we've asked
+for.
+
+This rejigs it to be a hash of hashes. They key for the constituent hashes are the value
+of a property of what's being described. This name is given as the second parameter.
+
+For example:
+
+    $self->_dityData($vmref, "hostname");
+
+Will rearrange the hash reference `$vmref` (which presumably contains hashes describing
+virtual machines) such that it's a hash-of-hashes where each element's keys are the 
+hostname of the machine described in the value.
+
+
+
 ## _applyFilter(), _applyAndFilter(), _applyOrFilter()
+
+
 
 _applyFilter is passed three hashrefs:
 
