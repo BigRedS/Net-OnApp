@@ -42,7 +42,7 @@ Creates and returns an OnApp::API object. Expects authentication and endpoint de
         api_url   => "url.of.the.onapp.box",
   );
 
-You can, if you prefer, supply api_email with an api_username and api_key with an api password.
+You can, if you prefer, supply C<api_email> with a web UI username and C<api_key> with a web UI password.
 
 =cut
 
@@ -105,7 +105,9 @@ sub new{
 
 Returns a reference to a hash-of-hashes whose keys are the hostnames of the VMs:
 
- my %vms = %{ $vm->getVMs };
+ my $vms = $vm->getVMs;
+
+ $vms->{'hostname'}
 
 =cut
 
@@ -118,7 +120,9 @@ sub getVMs(){
 	return $return;
 }
 
+=head3 createVM();
 
+=cut
 
 sub createVM(){
 	my $self = shift;
@@ -133,7 +137,7 @@ sub createVM(){
 =head3 getTemplates()
 
 Returns a hashref describing the templates. This is a hash-of-hashes, where the keys
-are the ID of the template described in the value.
+are the ID of the template described in the constituent hashes.
 
 =cut
 
@@ -152,21 +156,21 @@ Don't use these.
 
 =head2 _tidyData()
 
-Makes the data structure more sane. It comes out of the API as a hash of arrays, each 
-containing a single element which is a hash reference representing whatever we've asked
-for.
+Makes the data structure more sane. The API, when passed through C<JSON::decode_json()>, 
+produces an array of hashrefs. Each of those hashes itself contains a single hashref
+describing the elements being returned.
 
-This rejigs it to be a hash of hashes. They key for the constituent hashes are the value
-of a property of what's being described. This name is given as the second parameter.
+This takes that structure and rearranges it into a single hash of hashrefs. The keys of
+the parent hash are the value of a single key from each of the constituent hashes, defined 
+by the scond parameter to C<tidyData>:
 
-For example:
+  $ref $self->tidyData($ref, "hostname");
 
-  $self->_dityData($vmref, "hostname");
+will rearrange the $ref structure such that 
 
-Will rearrange the hash reference C<$vmref> (which presumably contains hashes describing
-virtual machines) such that it's a hash-of-hashes where each element's keys are the 
-hostname of the machine described in the value.
+  keys(%{ $ref });
 
+will return a list of hostnames.
 
 =cut
 
@@ -198,8 +202,11 @@ sub _tidyData{
 
 =head2 _applyFilter(), _applyAndFilter(), _applyOrFilter()
 
+This is currently not used. It seems a bit pointless trying to provide a
+generic filter here when it might as well be done outside of the module
+in a more specific way, or by the API itself (which it isn't).
 
-_applyFilter is passed three hashrefs:
+_applyFilter is passed two hashrefs:
 
    data:      some data to filter
    andFilter: a set of filtering criteria
@@ -275,8 +282,8 @@ sub _applyOrFilter{
 
 =head2 _getRef()
 
-Given a full URL (as returned by C<_getURL>, returns a hashref containing
-The data OnAPP returned.
+Given a full URL (as returned by C<_getURL> ), returns a hashref containing
+The data.
 
 =cut
 
@@ -289,7 +296,13 @@ sub _getRef{
 	return $hash;
 }
 
-sub makeJson{
+=head3 _makeJson()
+
+Given a hashref, creates some JSON for passing to OnApp. Doesn't yet exist.
+
+=cut
+
+sub _makeJson{
 	my $self = shift;
 	my $ref = shift;
 	my $json = encode_json($ref);
@@ -333,7 +346,7 @@ sub _getUrl{
 
 =head2 _getHash()
 
-Deprecated already. In favour of C<_getRef>. 'cause references are cool.
+Deprecated already, in favour of C<_getRef>. 'cause references are cool.
 
 =cut
 
