@@ -107,42 +107,14 @@ Returns a reference to a hash-of-hashes whose keys are the hostnames of the VMs:
 
  my %vms = %{ $vm->getVMs };
 
-You may provide some criteria with which to filter the machines:
-
- my $vms = vm->getVMs(
-         andFilter => {
-                 operating_system => "linux",
-                 admin_note       => "temporary"
-         }
-  )
-
-This is a ludicrously crude filter, currently. See the docs for _applyFilter in the
-private methods section.
-
 =cut
 
 sub getVMs(){
 	my $self = shift;
 	my %args = @_;
 	my $url = $self->_getUrl("get", "vms");
-	my $reference = $self->_getRef($url);
-	my @machines = @{$reference};
-	my %machine;
-	my %data;
-	foreach my $m (@machines){
-		%machine = %{$m};
-		foreach my $virtual_machine (keys(%machine)){
-			my $hostname = $machine{$virtual_machine}{'hostname'};
-			$data{$hostname} = $machine{$virtual_machine};
-		}
-	}
-	my $return = \%data;
-	if( exists($args{'andFilter'}) || exists($args{'orFilter'}) ){
-		$return = $self->_applyFilter(
-			data      => $return,
-			andFilter => $args{'andFilter'},
-		);
-	}
+	my $ref = $self->_getRef($url);
+	my $ref = $self->_tidyData($ref);
 	return $return;
 }
 
@@ -162,7 +134,6 @@ sub createVM(){
 
 Returns a hashref describing the templates. This is a hash-of-hashes, where the keys
 are the ID of the template described in the value.
-
 
 =cut
 
