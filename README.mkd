@@ -53,25 +53,25 @@ private methods section.
 
 Don't use these.
 
-## _applyFilter, _applyAndFilter, _applyOrFilter
+## _applyFilter(), _applyAndFilter(), _applyOrFilter()
 
 \_applyFilter is passed three hashrefs:
 
     data:      some data to filter
     andFilter: a set of filtering criteria
 
-    It calls \_applyAndFilter (and will, in the future, call \_applyOrFilter)
-    to do the filtering. Currently, it's a bit crude. The expectation is that
-    C<data> will be a hash of hashes. Each of its constituent hashes is kept if, 
-    and only if, each of its keys mentioned in C<andFilter> case-insensitively
-    matches the corresponding value in C<andFilter>
+It calls \_applyAndFilter (and will, in the future, call \_applyOrFilter)
+to do the filtering. Currently, it's a bit crude. The expectation is that
+`data` will be a hash of hashes. Each of its constituent hashes is kept if, 
+and only if, each of its keys mentioned in `andFilter` case-insensitively
+matches the corresponding value in `andFilter`
 
-## _getRef
+## _getRef()
 
 Given a full URL (as returned by `\_getURL`, returns a hashref containing
 The data OnAPP returned.
 
-## _getUrl
+## _getUrl()
 Used to create URLs from easy-to-remember names. For example, to get
 the correct URL for the API to return a list of users, you can do
 
@@ -79,7 +79,7 @@ the correct URL for the API to return a list of users, you can do
 
 These URLs are then passed to `\_getRef`.
 
-## _getHash
+## _getHash()
 
 Deprecated already. In favour of `\_getRef`. 'cause references are cool.
 
