@@ -1,3 +1,8 @@
 *.swp
 .*
 .gitignore
+*.bak
+pod2htm*
+*.tmp
+tmp
+new
