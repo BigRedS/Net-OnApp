@@ -81,6 +81,7 @@ sub new{
 	my $headers = HTTP::Headers->new();
 	$headers->header('accept' => 'application/json');
 	$headers->header('content-type' => 'application/json');
+#	$headers->header('content-type' => 'application/x-www-form-urlencoded');
 
 	
 	my $userAgent = LWP::UserAgent->new(
@@ -88,6 +89,7 @@ sub new{
 	);
 	my $apiLocation = $apiURL.":".$apiUrlPort;
 	$userAgent->credentials($apiLocation, $apiRealm, $apiUser, $apiPass);
+	$userAgent->agent("Avi's OnAPP::API/$VERSION ");
 	$self->{'_userAgent'} = $userAgent;
 	$self->{'_url'} = "http://$apiURL";
 
@@ -98,6 +100,50 @@ sub new{
 		
 
 =head1 METHODS
+
+=head2 Users
+
+=head3 getUsers()
+
+Returns a reference to a hash-of-hashes whose keys are the usernames of the users:
+
+=cut
+
+sub getUsers{
+	my $self = shift;
+	my $url = $self->_getUrl("get", "users");
+	my $ref = $self->_getRef($url);
+	my $ref = $self->_tidyData($ref, 'login');
+	return $ref;
+}
+
+=head3 createUser()
+
+=cut
+
+sub createUser{
+	my $self = shift;
+	my %args =@_;
+	my $url = $self->_getUrl("get", "vms");
+	# set some defaults:
+	my %params;
+	%params = (%params, %args);
+	my @requiredParams = qw/email first_name last_name login password password_confirmation/;
+
+	foreach my $param (@requiredParams){
+		Carp::croak "Paramater '$param' not passed to createVM " unless(exists($params{$param}));
+	}
+
+	my $url = $self->_getUrl("set", "users");
+	my $response = $self->_postJson(\%params, $url, "user");
+
+ #$self->_postJson( $hashref, $containerName, $url);
+#	print $response->as_string;
+	return $response;
+	return;	
+
+
+}
 
 =head2 VMs
 
@@ -116,7 +162,7 @@ sub getVMs(){
 	my %args = @_;
 	my $url = $self->_getUrl("get", "vms");
 	my $ref = $self->_getRef($url);
-	my $ref = $self->_tidyData($ref);
+	my $ref = $self->_tidyData($ref, 'hostname');
 	return $ref;
 }
 
@@ -161,12 +207,15 @@ sub createVM(){
 	my $json = $self->_makeJson(\%params);
 	my $json = '{"virtual_machine":'.$json.'}';
 
-	print $json;
-	say "x " x20;
+#	print $json;
+#	say "x " x20;
 	my $url = $self->_getUrl("set", "vms");
-	my $response = $self->_postJson(\%params, $url);
-	print $response->as_string;
-	return;	
+#	my $response = $self->_postJson(\%params, $url);
+	my $output = $self->_postJson(\%params, $url);
+
+	my $status = $output->status_description;
+
+	return $status;
 
 }
 
@@ -345,18 +394,65 @@ sub _getRef{
 }
 
 
+
+=head3 _postJson()
+
+ $self->_postJson( $hashref, $url, $containerName);
+
+Given a hashref, passes it to _makeJson to JSONify it and them POSTs it
+to the relevant API URL
+
+=cut
+
 sub _postJson{
 	my $self = shift;
 	my $ref = shift;
 	my $url = shift;
+	my $containerName = shift;
 
 	my $json = $self->_makeJson($ref);
-	$self->{_userAgent}->default_header("Content-type" => "application/application/json");	
-	$self->{_userAgent}->default_header("Accept" => "application/json");
-	my $response = $self->{_userAgent}->post($url, $json);
-	return $response;
+	my $json = '{"'.$containerName.'":'.$json.'}';
+
+	my $req = HTTP::Request->new(POST => $url);
+	$req->content_type('application/json');
+	$req->content($json);
+	my $response = $self->{_userAgent}->request($req);
+
+	my $return = {
+		json => $json,
+		requested_url => $url,
+		status_code => $response->code,
+		status => $response->message,
+		status_description => $self->_explainStatusCode($response->code),
+		content => $response->content,
+		response_object => $response,
+	};
+	return $return
+
 }
 
+=head3 _explainStatusCode
+
+ $self->_explainStatusCode($HTTPStatusCode);
+
+Given an HTTP status code, returns OnApp's explanation of why it would return it. Text is from
+the FAQ of the API guide.
+
+=cut
+
+sub _explainStatusCode{
+	my $self = shift;
+	my $code = shift;
+	my %explanations = (
+		200 => "The request completed successfully",
+		201 => "Scheduled The request has been accepted and scheduled for processing",
+		403 => "Forbidden The request is correct, but could not be processed.",
+		404 => "The requested URL is incorrect or the resource does not exist. For example, if you request to delete a user with ID {5}, but there is no such a user in the cloud, you will get a 404 error.",
+		422 => "The sent parameters are erroneous.",
+		500 => "An error occurred. Please contact support.",
+	);
+	return $explanations{$code};
+}
 
 
 =head3 _makeJson()
@@ -372,16 +468,11 @@ sub _makeJson{
 	return $json;
 }
 
-=head3 _postJson()
-Given a hashref, passes it to _makeJson to JSONify it and them POSTs it
-to the relevant API URL
-=cut
-
 =head2 _getUrl()
 Used to create URLs from easy-to-remember names. For example, to get
 the correct URL for the API to return a list of users, you can do
 
-  _getURL("get", "users");
+  $self->_getURL("get", "users");
 
 These URLs are then passed to C<_getRef>.
 
