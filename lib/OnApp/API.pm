@@ -117,18 +117,56 @@ sub getVMs(){
 	my $url = $self->_getUrl("get", "vms");
 	my $ref = $self->_getRef($url);
 	my $ref = $self->_tidyData($ref);
-	return $return;
+	return $ref;
 }
 
 =head3 createVM();
+> *cpus	 		Number of CPUs assigned to the VM.
+> *cpu_shares		Set CPU priority for this VM.
+> *Hostname		Set the host name for this VM.
+> *label		User-friendly VM description.
+> *primary_disk_size	Set the disk space for this VM. in GB.
+> *swap_disk_size	Set swap space. There is no swap disk for Windows-based VMs.
+> primary_network_id	The ID of the primary network. Optional parameter.
+> required_automatic_backup	Set 1 if you need automatic backups.
+> rate_limit		Set max port speed. Optional parameter: if none set, the system sets port speed to unlimited.
+> *required_ip_address_assignment	Set 1 if you wish the system to assign an IP automatically
+> *required_virtual_machine_build	Set 1 to build VM automatically
+> admin_note		Enter a brief comment for the VM. Optional parameter.
+> Note			A brief comment a user can add to a VM.
+> *template_id	 	The ID of a template from which a VM should be built
+> hypervisor_group_id	The ID of the hypervisor zone in which the VM will be created. Optional: if no hypervisor zone is set, the VM will  be built in any available hypervisor zone.
+> hypervisor_id		The ID of a hypervisor where the VM will be built.
+> initial_root_password Root password. [\w\-\_]{6,32} created if not supplied
 
 =cut
 
 sub createVM(){
 	my $self = shift;
 	my %args =@_;
-	my $url = $self->getURL("get", "vms");
+	my $url = $self->_getUrl("get", "vms");
+	# set some defaults:
+	my %params = (
+		required_automatic_backup => "0",
+		required_ip_address_assignment => "1",
+		required_virtual_machine_build => "1",
+	);
+
+	%params = (%params, %args);
 	my @requiredParams = qw/cpus cpu_shares Hostname label primary_disk_size swap_disk_size required_ip_address_assignment required_virtual_machine_build template_id/;
+	foreach my $param (@requiredParams){
+		Carp::croak "Paramater '$param' not passed to createVM " unless(exists($params{$param}));
+	}
+
+	my $json = $self->_makeJson(\%params);
+	my $json = '{"virtual_machine":'.$json.'}';
+
+	print $json;
+	say "x " x20;
+	my $url = $self->_getUrl("set", "vms");
+	my $response = $self->_postJson(\%params, $url);
+	print $response->as_string;
+	return;	
 
 }
 
@@ -190,6 +228,16 @@ sub _tidyData{
 	}
 	my $return = \%data;
 	return $return;
+}
+
+sub _untidyData{
+	my $self = shift;
+	my $ref = shift;
+	my $extraName = shift;
+	my @array = {
+		$extraName => $ref
+	};
+	return \@array;
 }
 
 #	if( exists($args{'andFilter'}) || exists($args{'orFilter'}) ){
@@ -296,9 +344,24 @@ sub _getRef{
 	return $hash;
 }
 
+
+sub _postJson{
+	my $self = shift;
+	my $ref = shift;
+	my $url = shift;
+
+	my $json = $self->_makeJson($ref);
+	$self->{_userAgent}->default_header("Content-type" => "application/application/json");	
+	$self->{_userAgent}->default_header("Accept" => "application/json");
+	my $response = $self->{_userAgent}->post($url, $json);
+	return $response;
+}
+
+
+
 =head3 _makeJson()
 
-Given a hashref, creates some JSON for passing to OnApp. Doesn't yet exist.
+Given a hashref, creates some JSON for passing to OnApp.
 
 =cut
 
@@ -309,6 +372,10 @@ sub _makeJson{
 	return $json;
 }
 
+=head3 _postJson()
+Given a hashref, passes it to _makeJson to JSONify it and them POSTs it
+to the relevant API URL
+=cut
 
 =head2 _getUrl()
 Used to create URLs from easy-to-remember names. For example, to get
@@ -326,6 +393,11 @@ sub _getUrl{
 	my $what = shift;
 	my %uris = (
 		get => {
+			users	=> '/users.json',
+			vms	=> '/virtual_machines.json',
+			templates => '/templates.json',
+		},
+		set => {
 			users	=> '/users.json',
 			vms	=> '/virtual_machines.json',
 			templates => '/templates.json',
