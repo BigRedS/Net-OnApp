@@ -218,9 +218,14 @@ sub createUser{
 	my $url = $self->_getUrl("set", "users");
 	my $response = $self->_postJson(\%params, $url, "user");
 
-	return $response;
-	return;	
-
+	if ($response->{status_code} =~ /^2/){
+		my $vmInfo = $response->{'content'};
+		my $ref = $self->_makeRef($vmInfo);
+		my $ref = $ref->{'user'};
+		return $ref;
+	}else{
+		return $response;
+	}
 
 }
 
