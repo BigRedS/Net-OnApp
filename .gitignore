@@ -6,3 +6,4 @@ pod2htm*
 *.tmp
 tmp
 new
+bin/pissabout.pl
