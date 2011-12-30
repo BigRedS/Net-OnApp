@@ -1,6 +1,6 @@
 #! /usr/bin/perl  
 
-package OnApp::API;
+package Net::OnApp;
 
 use strict;
 #use warnings;
