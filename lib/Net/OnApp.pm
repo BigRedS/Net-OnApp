@@ -326,7 +326,14 @@ sub createVM(){
 	my $url = $self->_getUrl("set", "vms");
 	my $response = $self->_postJson(\%params, $url, "virtual_machine");
 
-	return $response;
+	if ($response->{status_code} =~ /^2/){
+		my $vmInfo = $response->{'content'};
+		my $ref = $self->_makeRef($vmInfo);
+		my $ref = $ref->{'virtual_machine'};
+		return $ref;
+	}else{
+		return $response;
+	}
 
 }
 
@@ -490,10 +497,24 @@ sub _getRef{
 	my $url = shift;
 	my $response = $self->{_userAgent}->get($url);
 	my $body = $response->content;
-	my $hash = decode_json($body);
-	return $hash;
+#	my $hash = decode_json($body);
+	my $ref = $self->_makeRef($body);
+	return $ref;
 }
 
+=head3 makeRef{
+Given a JSON string, returns a reference to a hashref of it.
+
+}
+
+=cut
+
+sub _makeRef{
+	my $self = shift;
+	my $json = shift;
+	my $ref = decode_json($json);
+	return $ref;
+}
 
 
 =head3 _postJson()
@@ -644,6 +665,7 @@ sub _getHash(){
 =head1 SEE ALSO
 
 L<http://cdn.onapp.com/files/docs/onapp_cloud_2-3_api_guide_v1-3.pdf>
+but take it with a good deal of common sense.
 
 =head1 COPYRIGHT
 
