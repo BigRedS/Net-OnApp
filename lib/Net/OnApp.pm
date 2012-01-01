@@ -17,9 +17,11 @@ $VERSION=0.20111102;
 
 =head1 NAME
 
-OnApp::API - Perlish interface to OnApp API
+Net::OnApp - Perlish interface to OnApp API
 
 =head1 SYNOPSIS
+
+Net::OnApp is a perl interface to OnApp's API
 
   use OnApp::API;
   my $vm = OnAPP::API->(
@@ -43,9 +45,11 @@ OnApp::API - Perlish interface to OnApp API
         template_id => $templateID,
   );
 
+=head1 RETURN VALUES
 
-Each of the C<create> methods returns a hashref containing some useful data, but
-no real information. Keys are:
+Each of the C<create> methods returns a hashref. On success, the hashref is equivelent
+to what you'd get out of a C<getWhatever> call. On failure, you get a hashref containing 
+info which might be handy for debugging:
 
 =over 4
 
@@ -63,6 +67,8 @@ no real information. Keys are:
 used to POST the data.
 
 =back
+
+So if you get a response cointaining a C<status> key, then something's gone wrong.
 
 =head1 CONSTRUCTOR AND STARTUP
 
@@ -138,7 +144,7 @@ sub new{
 
 =head3 getUsers()
 
-Returns a reference to a hash-of-hashes whose keys are the usernames of the users:
+Returns a reference to a hash-of-hashes whose keys are the usernames of the users. 
 
 =cut
 
@@ -148,6 +154,33 @@ sub getUsers{
 	my $ref = $self->_getRef($url);
 	my $ref = $self->_tidyData($ref, 'login');
 	return $ref;
+}
+
+=head3 getUserInfo()
+
+Returns a reference to a hash describing the user whose ID it's passed:
+
+  my $ref = $onapp->getUserInfo($id);
+
+
+=cut
+
+
+sub getUserInfo{
+	my $self = shift;
+	my %args = @_;
+	my $id = shift;
+	my $url = $self->_getUrl("get", "user");
+	$url.=":".$id.".json";
+	my $response = $self->{_userAgent}->get($url);
+	if ($response->{status_code} =~ /^2/){
+		my $vmInfo = $response->{'content'};
+		my $ref = $self->_makeRef($vmInfo);
+		my $ref = $ref->{'virtual_machine'};
+		return $ref;
+	}else{
+		return $response;
+	}
 }
 
 =head3 createUser()
@@ -216,7 +249,12 @@ sub createUser{
 	}
 
 	my $url = $self->_getUrl("set", "users");
-	my $response = $self->_postJson(\%params, $url, "user");
+#	my $response = $self->_postJson(\%params, $url, "user");
+	my $response = $self->_postJson(
+		ref => \%params,
+		url => $url,
+		container => "user",
+	);
 
 	if ($response->{status_code} =~ /^2/){
 		my $vmInfo = $response->{'content'};
@@ -329,7 +367,12 @@ sub createVM(){
 	}
 
 	my $url = $self->_getUrl("set", "vms");
-	my $response = $self->_postJson(\%params, $url, "virtual_machine");
+#	my $response = $self->_postJson(\%params, $url, "virtual_machine");
+	my $response = $self->_postJson(
+		ref => \%params,
+		url => $url,
+		container => "virtual_machine",
+	);
 
 	if ($response->{status_code} =~ /^2/){
 		my $vmInfo = $response->{'content'};
@@ -340,6 +383,61 @@ sub createVM(){
 		return $response;
 	}
 
+}
+
+sub getVMInfo{
+	my $self = shift;
+	my %args = @_;
+	my $id = shift;
+	my $url = $self->_getUrl("get", "vm");
+	$url.=":".$id.".json";
+#	my $response = $self->_postJson(
+#		json => '',
+#		url => $url,
+#	);
+	my $response = $self->{_userAgent}->get($url);
+	if ($response->{status_code} =~ /^2/){
+		my $vmInfo = $response->{'content'};
+#		my $ref = $self->_makeRef($vmInfo);
+#		my $ref = $ref->{'virtual_machine'};
+		return $vmInfo;
+	}else{
+		return $response;
+	}
+}
+
+=head3 chownVM
+
+=cut
+
+sub chownVM{
+	my $self = shift;
+	my %args =@_;
+	my $url = $self->_getUrl("get", "vm");
+	print $url;
+	my @requiredParams = qw/user_id virtual_machine_id/;
+	foreach(@requiredParams){
+		 Carp::croak("$_ required but not supplied") unless (exists($args{$_}));
+	}
+
+#	$url.="/:".$args{'virtual_machine_id'};
+	my $json = "{'user_id':'".$args{user_id}."'}";
+
+	my $response = $self->_postJson(\%args, $url, "user");
+	my $response = $self->_postJson(
+		json => $json,
+		url  => $url,
+	);
+
+
+	if ($response->{status_code} =~ /^2/){
+		my $vmInfo = $response->{'content'};
+		my $ref = $self->_makeRef($vmInfo);
+		my $ref = $ref->{'user'};
+		return $ref;
+	}else{
+		return $response;
+	}
 }
 
 =head2 TEMPLATES
@@ -524,22 +622,36 @@ sub _makeRef{
 
 =head3 _postJson()
 
- $self->_postJson( $hashref, $url, $containerName);
+ $self->_postJson(
+        url => $url,
+        container => "container name",
+        json => $json,
+        ref => $ref
+ );
 
-Given a hashref, passes it to _makeJson to JSONify it and them POSTs it
-to the relevant API URL
+
+Passes the ref to C<_makeJson> to turn it into JSON and then posts
+that to the URL, having contained it in a single-element array by 
+the name supplied to C<container>.
+
+If C<json> is passed, this is used instead of C<_makeJson>.
 
 =cut
 
 sub _postJson{
 	my $self = shift;
-	my $ref = shift;
-	my $url = shift;
-	my $containerName = shift;
 
-	my $json = $self->_makeJson($ref);
-	$json = '{"'.$containerName.'":'.$json.'}';
+	my %args = @_;
+	my $json = $args{json};
+	my $url = $args{url};
+	my $containerName = $args{container};
 
+	unless( exists( $args{json} ) ){
+		unless ($json =~/^$/){
+			$json = $self->_makeJson( $args{ref} );
+			$json = '{"'.$containerName.'":'.$json.'}';
+		}
+	}
 	my $req = HTTP::Request->new(POST => $url);
 	$req->content_type('application/json');
 	$req->content($json);
@@ -628,7 +740,9 @@ sub _getUrl{
 	my %uris = (
 		get => {
 			users	=> '/users.json',
+			user	=> '/users/',
 			vms	=> '/virtual_machines.json',
+			vm	=> '/virtual_machines/',
 			templates => '/templates.json',
 		},
 		set => {

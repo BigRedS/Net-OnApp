@@ -1,8 +1,10 @@
 # NAME
 
-OnApp::API - Perlish interface to OnApp API
+Net::OnApp - Perlish interface to OnApp API
 
 # SYNOPSIS
+
+Net::OnApp is a perl interface to OnApp's API
 
     use OnApp::API;
     my $vm = OnAPP::API->(
@@ -26,10 +28,11 @@ OnApp::API - Perlish interface to OnApp API
           template_id => $templateID,
     );
 
+# RETURN VALUES
 
-
-Each of the `create` methods returns a hashref containing some useful data, but
-no real information. Keys are:
+Each of the `create` methods returns a hashref. On success, the hashref is equivelent
+to what you'd get out of a `getWhatever` call. On failure, you get a hashref containing 
+info which might be handy for debugging:
 
 - `status_code` => HTTP numerical status code
 - `status` => HTTP standard description for the HTTP status code
@@ -38,6 +41,8 @@ no real information. Keys are:
 - `json` => The JSON sent
 - `response_objct` => The response object as returned by the `LWP::UserAgent` object 
 used to POST the data.
+
+So if you get a response cointaining a `status` key, then something's gone wrong.
 
 # CONSTRUCTOR AND STARTUP
 
@@ -59,7 +64,15 @@ You can, if you prefer, supply `api_email` with a web UI username and `api_key` 
 
 ### getUsers()
 
-Returns a reference to a hash-of-hashes whose keys are the usernames of the users:
+Returns a reference to a hash-of-hashes whose keys are the usernames of the users. 
+
+### getUserInfo()
+
+Returns a reference to a hash describing the user whose ID it's passed:
+
+    my $ref = $onapp->getUserInfo($id);
+
+
 
 ### createUser()
 
@@ -135,6 +148,8 @@ Optional fields:
 - `hypervisor_id` => The ID of a hypervisor where the VM will be built.
 - `initial_root_password` => Root password. [\w\-\_]{6,32} created if not supplied
 
+### chownVM
+
 ## TEMPLATES
 
 ### getTemplates()
@@ -186,12 +201,27 @@ matches the corresponding value in `andFilter`
 Given a full URL (as returned by `_getURL` ), returns a hashref containing
 The data.
 
+### makeRef{
+Given a JSON string, returns a reference to a hashref of it.
+
+}
+
 ### _postJson()
 
-    $self->_postJson( $hashref, $url, $containerName);
+    $self->_postJson(
+           url => $url,
+           container => "container name",
+           json => $json,
+           ref => $ref
+    );
 
-Given a hashref, passes it to _makeJson to JSONify it and them POSTs it
-to the relevant API URL
+
+
+Passes the ref to `_makeJson` to turn it into JSON and then posts
+that to the URL, having contained it in a single-element array by 
+the name supplied to `container`.
+
+If `json` is passed, this is used instead of `_makeJson`.
 
 ### _explainStatusCode
 
@@ -226,6 +256,7 @@ Deprecated already, in favour of `_getRef`. 'cause references are cool.
 # SEE ALSO
 
 [http://cdn.onapp.com/files/docs/onapp_cloud_2-3_api_guide_v1-3.pdf](http://cdn.onapp.com/files/docs/onapp_cloud_2-3_api_guide_v1-3.pdf)
+but take it with a good deal of common sense.
 
 # COPYRIGHT
 
