@@ -677,10 +677,8 @@ sub _getRef{
 	return $ref;
 }
 
-=head3 makeRef{
+=head3 _makeRef()
 Given a JSON string, returns a reference to a hashref of it.
-
-}
 
 =cut
 
