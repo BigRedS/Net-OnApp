@@ -244,7 +244,7 @@ sub createUser{
 	%params = (%params, %args);
 	my @requiredParams = qw/email first_name last_name login password password_confirmation/;
 	foreach my $param (@requiredParams){
-		Carp::croak "Paramater '$param' not passed to createVM " unless(exists($params{$param}));
+		Carp::croak "Paramater '$param' not passed to createUser " unless(exists($params{$param}));
 	}
 
 	my $url = $self->_getUrl("set", "users");
@@ -439,12 +439,12 @@ sub createVM(){
 	}
 
 	my $url = $self->_getUrl("set", "vms");
-#	my $response = $self->_postJson(\%params, $url, "virtual_machine");
 	my $response = $self->_postJson(
 		ref => \%params,
 		url => $url,
 		container => "virtual_machine",
 	);
+
 
 	if ($response->{status_code} =~ /^2/){
 		my $vmInfo = $response->{'content'};
@@ -495,7 +495,8 @@ sub chownVM{
 #	$url.="/:".$args{'virtual_machine_id'};
 	my $json = "{'user_id':'".$args{user_id}."'}";
 
-	my $response = $self->_postJson(\%args, $url, "user");
+#	my $response = $self->_postJson(\%args, $url, "user");
+	return $url;
 	my $response = $self->_postJson(
 		json => $json,
 		url  => $url,
@@ -672,7 +673,6 @@ sub _getRef{
 	my $url = shift;
 	my $response = $self->{_userAgent}->get($url);
 	my $body = $response->content;
-#	my $hash = decode_json($body);
 	my $ref = $self->_makeRef($body);
 	return $ref;
 }
@@ -738,13 +738,13 @@ sub _postJson{
 	my $json = $args{json};
 	my $url = $args{url};
 	my $containerName = $args{container};
-
-	unless( exists( $args{json} ) ){
-		unless ($json =~/^$/){
-			$json = $self->_makeJson( $args{ref} );
-			$json = '{"'.$containerName.'":'.$json.'}';
-		}
+	
+	if(exists($opts{ref}){
+		$json = $self->_makeJson( $args{ref} );
+		$json = '{"'.$containerName.'":'.$json.'}';
 	}
+
+
 	my $req = HTTP::Request->new(POST => $url);
 	$req->content_type('application/json');
 	$req->content($json);
