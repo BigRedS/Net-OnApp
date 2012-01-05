@@ -38,10 +38,17 @@ my $onapp = Net::OnApp->new(
 #  cpus = 2
 # n	admin note 
 # c	normal note (comment)
-my %opts;
-getopts('d:l:h:p:r:n:c:', \%opts);
+# Creating a user, too:
+# u	login name (username is created if this is set)
+# e	email address
+# f	first name
+# s	surname
+# p	password
 
-if ( (!exists($opts{l})) || $opts{l} !~ /.+/ ){
+my %opts;
+getopts('d:l:h:p:r:n:c:u:e:f:s:p:', \%opts);
+
+if ( (!exists($opts{l})) || ($opts{l} !~ /.+/) ){
 	print &usage;
 	exit 0;
 }
@@ -54,6 +61,18 @@ my $cpuShares = 10 * $ram;
 my $cpuCount = 2;
 my $templateID = 28;	# debian 6 amd64
 my $netRateLimit = 100;
+
+if( exists($opts{u}) ){
+	my $username = $opts{u};
+	foreach(qw/e f s u p/){
+		unless( exists($opts{$_}) ){
+			print "$_ is a required option when 'u' is passed";
+			print &usage;
+			exit 1;
+		}
+	}
+}
+
 
 my %hostnames = map { (split(/\./, $_))[0] => $_ } keys( %{ $onapp->getVMs } );
 
@@ -68,7 +87,7 @@ my $result = $onapp->createVM(
 	hostname	=> $hostname,
 	label		=> $label,
 	primary_disk_size => $diskSize,
-	swap_disk_size => $swapSize,
+	swap_disk_size  => $swapSize,
 	rate_limit	=> $netRateLimit,
 	admin_note	=> $opts{n},
 	note		=> $opts{c},
@@ -77,13 +96,44 @@ my $result = $onapp->createVM(
 );
 
 if(exists($result->{status})){
-	print STDERR "Error. OnApp said \"$result->{status_description}\"\n";
+	print STDERR "Error creating VM. OnApp said \"$result->{status_description}\"\n";
 	exit 1;
 }
 
-my $ipAddress = $result->{ip_addresses}[0]->{ip_address}->{address};
+my $vmID = $result->{id};
 
-print "IP: $ipAddress\n";
+if (exists($opts{u})){
+
+	# u	login name (username is created if this is set)
+	# e	email address
+	# f	first name
+	# s	surname
+	# p	password
+
+	my $newuser = $onapp->createUser(
+		email      => $opts{e},
+		first_name => $opts{f},
+		last_name  => $opts{s},
+		login      => $opts{u},
+		password   => $opts{p},
+	);
+	my $userID;
+	if( exists( $newuser->{status_code}) ){ 
+		print STDERR "Error creating user. OnApp said \"$newuser->{status_description}\"\n";
+	}else{
+		$userID = $newuser->{id};
+	}	
+	my $result = $onapp->chownVM(
+		virtual_machine_id => $vmID,
+		user_id	           => $userID,
+	);
+	if (exists( $onapp->{status_code})){
+		print STDERR "Error chowning VM \"$vmID\" to User \"$userID\". OnApp said \"$result->{status_description}\"\n";
+	}
+}
+
+my $ipAddress = $result->{ip_addresses}[0]->{ip_address}->{address};
+print $ipAddress;
 
 sub usage{
 	return "idiot.\n";
