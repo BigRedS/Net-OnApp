@@ -739,7 +739,7 @@ sub _postJson{
 	my $url = $args{url};
 	my $containerName = $args{container};
 	
-	if(exists($opts{ref}){
+	if(exists($args{ref}) ){
 		$json = $self->_makeJson( $args{ref} );
 		$json = '{"'.$containerName.'":'.$json.'}';
 	}
