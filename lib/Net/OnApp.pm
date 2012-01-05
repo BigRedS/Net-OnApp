@@ -476,6 +476,13 @@ sub getVMInfo{
 
 =head3 chownVM
 
+Change the ownership of a VM:
+
+  $onapp->chownVM(
+	user_id            => $newOwnersUserID,
+	virtual_machine_id => $virtualManchineID,
+  );
+
 =cut
 
 sub chownVM{
@@ -487,14 +494,13 @@ sub chownVM{
 		 Carp::croak("$_ required but not supplied") unless (exists($args{$_}));
 	}
 
-	$url.=$args{'virtual_machine_id'}."/change_owner.json";
+	$url.=$args{'virtual_machine_id'}."/tchange_owner.json";
 	my $json = "{'user_id':'".$args{user_id}."'}";
 
 	my $response = $self->_postJson(
 		json => $json,
 		url  => $url,
 	);
-
 
 	if ($response->{status_code} =~ /^2/){
 		my $vmInfo = $response->{'content'};
