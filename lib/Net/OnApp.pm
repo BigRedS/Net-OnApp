@@ -487,7 +487,7 @@ sub chownVM{
 		 Carp::croak("$_ required but not supplied") unless (exists($args{$_}));
 	}
 
-	$url.="/".$args{'virtual_machine_id'};
+	$url.=$args{'virtual_machine_id'}."/change_owner.json";
 	my $json = "{'user_id':'".$args{user_id}."'}";
 
 	my $response = $self->_postJson(
