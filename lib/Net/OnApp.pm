@@ -491,11 +491,14 @@ sub chownVM{
 	my $url = $self->_getUrl("get", "vm");
 	my @requiredParams = qw/user_id virtual_machine_id/;
 	foreach(@requiredParams){
-		 Carp::croak("$_ required but not supplied") unless (exists($args{$_}));
+		 Carp::croak("$_ required but not supplied or empty") unless ( (exists($args{$_})) && ($args{$_} =~ /.+/)    );
 	}
 
-	$url.=$args{'virtual_machine_id'}."/tchange_owner.json";
+	$url.=$args{'virtual_machine_id'}."/change_owner.json";
+	print "URL: [$url]\n";
 	my $json = "{'user_id':'".$args{user_id}."'}";
+	print "JSON: [$json]\n";
+
 
 	my $response = $self->_postJson(
 		json => $json,
