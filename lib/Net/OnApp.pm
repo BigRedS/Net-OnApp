@@ -462,17 +462,13 @@ sub getVMInfo{
 	my %args = @_;
 	my $id = shift;
 	my $url = $self->_getUrl("get", "vm");
-	$url.=":".$id.".json";
-#	my $response = $self->_postJson(
-#		json => '',
-#		url => $url,
-#	);
-	my $response = $self->{_userAgent}->get($url);
+	$url.=$id.".json";
+	my $response = $self->_get($url);
 	if ($response->{status_code} =~ /^2/){
 		my $vmInfo = $response->{'content'};
-#		my $ref = $self->_makeRef($vmInfo);
-#		my $ref = $ref->{'virtual_machine'};
-		return $vmInfo;
+		my $ref = $self->_makeRef($vmInfo);
+		my $ref = $ref->{'virtual_machine'};
+		return $ref;
 	}else{
 		return $response;
 	}
@@ -486,17 +482,14 @@ sub chownVM{
 	my $self = shift;
 	my %args =@_;
 	my $url = $self->_getUrl("get", "vm");
-	print $url;
 	my @requiredParams = qw/user_id virtual_machine_id/;
 	foreach(@requiredParams){
 		 Carp::croak("$_ required but not supplied") unless (exists($args{$_}));
 	}
 
-#	$url.="/:".$args{'virtual_machine_id'};
+	$url.="/".$args{'virtual_machine_id'};
 	my $json = "{'user_id':'".$args{user_id}."'}";
 
-#	my $response = $self->_postJson(\%args, $url, "user");
-	return $url;
 	my $response = $self->_postJson(
 		json => $json,
 		url  => $url,
