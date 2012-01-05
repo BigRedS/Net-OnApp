@@ -495,9 +495,7 @@ sub chownVM{
 	}
 
 	$url.=$args{'virtual_machine_id'}."/change_owner.json";
-	print "URL: [$url]\n";
 	my $json = "{'user_id':'".$args{user_id}."'}";
-	print "JSON: [$json]\n";
 
 
 	my $response = $self->_postJson(
