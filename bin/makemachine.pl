@@ -136,5 +136,55 @@ my $ipAddress = $result->{ip_addresses}[0]->{ip_address}->{address};
 print $ipAddress;
 
 sub usage{
-	return "idiot.\n";
+
+my $string = <<EOF;
+
+makemachine
+
+Script for making OnApp virtual machines.
+
+Usage:
+
+makemachine <options>
+
+VIRTUAL MACHINES:
+
+ -l <label> 	Machine label. Mandatory
+ -d <size>      Disk size (GB)
+ -s <size>      Swap volume size (GB)
+ -h <hostname>  Actually, fqdn. Defaults to 
+                <label>.us.positive-dedicated.net
+ -p <password>  Root password. Default is to autogenerate
+ -r <size>      Amount of RAM (GB).
+ -n <text>      Set the text of 'admin note'
+ -c <text>      Set the text of the 'note'
+
+USERS:
+
+You can also create a user at the same time, and have that user
+set as the owner of the virtual machine:
+
+ -l <login>     Set the username. If this is set, it is expected
+                that you wish to create a user, and so all the 
+                rest of the user options become mandatory.
+ -e <email>     User's email address. Must be unique on the system
+ -f <name>      Forename
+ -s <name>      Surname
+ -p <password>  set password.
+
+DEFAULTS:
+
+Hostname        \$label."us.positive-dedicated.net"
+Ram		1GB
+Disk size	8GB
+Swap size	1GB
+CPU shares	10% for each GB of RAM
+CPU Count	2
+Template ID	28 (debian 6 amd64)
+Net bandwidth	100MB
+
+
+Written by Avi in 2012
+EOF
+
 }
