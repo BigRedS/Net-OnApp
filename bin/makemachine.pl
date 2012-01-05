@@ -55,7 +55,7 @@ if ( (!exists($opts{l})) || ($opts{l} !~ /.+/) ){
 my $label = $opts{l};
 my $hostname = $label.".us.positive-dedicated.net";
 my $ram = $opts{r} || "1";
-my $diskSize = $opts{d} || 8;
+my $diskSize = $opts{d} || 39;
 my $swapSize = $opts{s} || 1;
 my $cpuShares = 10 * $ram;
 my $cpuCount = 2;
@@ -176,7 +176,7 @@ DEFAULTS:
 
 Hostname        \$label."us.positive-dedicated.net"
 Ram		1GB
-Disk size	8GB
+Disk size	39GB
 Swap size	1GB
 CPU shares	10% for each GB of RAM
 CPU Count	2
