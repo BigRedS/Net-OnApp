@@ -11,7 +11,7 @@ use JSON;
 use Data::Dumper;
 
 my $VERSION;
-$VERSION=0.20120106
+$VERSION=0.20120106;
 
 =pod
 
