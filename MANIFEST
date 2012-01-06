@@ -1,0 +1,10 @@
+./Changes
+./README.mkd
+./lib
+./lib/Net
+./lib/Net/OnApp.pm
+./Makefile.PL
+./MANIFEST
+./bin
+./bin/README.mkd
+./bin/makemachine.pl
