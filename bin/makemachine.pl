@@ -13,20 +13,7 @@ use Getopt::Std;
 use Data::Dumper;
 use 5.010;
 
-open(my $f, "<", "/home/avi/.onapp_credentials") or die "Error getting credentials";
-my ($email, $key) = (<$f>);
-close($f);
-
-chomp($email);
-chomp($key);
-
-my $onapp = Net::OnApp->new(
-	api_email => $email,
-	api_key => $key,
-	api_url => "cloudbase.us.positive-internet.com",
-);
-
-
+my %opts;
 
 # d	disk size (GB)
 # s	swap volume size (GB)
@@ -44,8 +31,7 @@ my $onapp = Net::OnApp->new(
 # f	first name
 # s	surname
 # p	password
-
-my %opts;
+# v	be verbose
 getopts('d:l:h:p:r:n:c:u:e:f:s:p:', \%opts);
 
 if ( (!exists($opts{l})) || ($opts{l} !~ /.+/) ){
@@ -62,6 +48,40 @@ my $cpuCount = 2;
 my $templateID = 28;	# debian 6 amd64
 my $netRateLimit = 100;
 
+
+my $onappCredentialsFile = $ENV{'HOME'}."/.onapp_credentials";
+my ($email,$key);
+unless( -f $onappCredentialsFile ){
+	print "OnApp requires that you log in with either a username and\n";	
+	print "password or an email address and API key. You can avoid\n";
+	print "being prompted by creating a file at ~/.onapp_credentials\n";
+	print "with your username or email on the first line and password\n";
+	print "or API key on the second\n\n";
+	print "Enter username or email address:\n";
+	$email = <>;
+	print "Password or API key:\n";
+	system('stty','-echo');
+	$key = <>;
+	system('stty','echo');
+}else{
+	open(my $f, "<", "/home/avi/.onapp_credentials") or die "Error getting credentials from $onappCredentialsFile\n";
+	($email, $key) = (<$f>);
+	close($f);
+}
+chomp($email);
+chomp($key);
+
+my $onapp = Net::OnApp->new(
+	api_email => $email,
+	api_key => $key,
+	api_url => "cloudbase.us.positive-internet.com",
+);
+
+
+
+# If we need to create a user, check that we've got 
+# all the right arguments and that the email address
+# is unique
 if( exists($opts{u}) ){
 	my $username = $opts{u};
 	foreach(qw/e f s u p/){
@@ -71,10 +91,19 @@ if( exists($opts{u}) ){
 			exit 1;
 		}
 	}
+	my %users = ${ $onapp->getUsers };
+	foreach(keys(%users)){
+		if ($_->{"email"} =~ /^$opts{"e"}$/i){
+			die "User with email address $opts{'e'} already exists\n";
+		}
+	}
 }
 
-
+# Create a hash of 
+# "short hostname" => "fqdn"
+# so we know what already exists
 my %hostnames = map { (split(/\./, $_))[0] => $_ } keys( %{ $onapp->getVMs } );
+
 
 if ( exists(($hostnames{$label})) ){
 	print STDERR "Machine with host name $hostname already exists\n";
@@ -183,8 +212,28 @@ CPU Count	2
 Template ID	28 (debian 6 amd64)
 Net bandwidth	100MB
 
+CREDENTIALS:
 
-Written by Avi in 2012
+OnApp's API requires authentication, you may authenticate with one
+of these two pairs of credentials:
+
+ - username and password
+ - email address and API key
+
+You will be prompted for these on trying to create a VM unless you've
+created a file at ~/.onapp_credentials. This file should have two 
+lines, the first containing your username or email address  and the 
+second your password or key. No extraneous whitespace or newlines
+please.
+
+VERSION:
+
+This dates from 2012-02-01. You might find newer versions at
+
+https://github.com/BigRedS/onapp
+
+They might not be better.
+
 EOF
 
 }
