@@ -7,7 +7,7 @@ use strict;
 use 5.010;
 use Carp;
 use LWP::UserAgent;
-use JSON;
+use JSON;	# libjson-perl
 use Data::Dumper;
 
 my $VERSION;
@@ -685,7 +685,13 @@ Given a JSON string, returns a reference to a hashref of it.
 sub _makeRef{
 	my $self = shift;
 	my $json = shift;
-	my $ref = decode_json($json);
+	my $ref;
+	eval{
+		$ref = decode_json($json);
+	};
+	if($@){
+		Carp::croak "Error comminicating with OnApp server. Authentication problem?";
+	}
 	return $ref;
 }
 
