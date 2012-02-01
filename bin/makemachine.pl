@@ -36,7 +36,7 @@ getopts('d:l:h:p:r:n:c:u:e:f:s:p:', \%opts);
 
 if ( (!exists($opts{l})) || ($opts{l} !~ /.+/) ){
 	print &usage;
-	exit 0;
+	exit 1;
 }
 my $label = $opts{l};
 my $hostname = $label.".us.positive-dedicated.net";
@@ -64,7 +64,7 @@ unless( -f $onappCredentialsFile ){
 	$key = <>;
 	system('stty','echo');
 }else{
-	open(my $f, "<", "/home/avi/.onapp_credentials") or die "Error getting credentials from $onappCredentialsFile\n";
+	open(my $f, "<", "/home/avi/.onapp_credentials") or error("Error getting credentials from $onappCredentialsFile: $!");
 	($email, $key) = (<$f>);
 	close($f);
 }
@@ -94,7 +94,7 @@ if( exists($opts{u}) ){
 	my %users = ${ $onapp->getUsers };
 	foreach(keys(%users)){
 		if ($_->{"email"} =~ /^$opts{"e"}$/i){
-			die "User with email address $opts{'e'} already exists\n";
+			error("User with email address $opts{'e'} already exists");
 		}
 	}
 }
@@ -106,8 +106,7 @@ my %hostnames = map { (split(/\./, $_))[0] => $_ } keys( %{ $onapp->getVMs } );
 
 
 if ( exists(($hostnames{$label})) ){
-	print STDERR "Machine with host name $hostname already exists\n";
-	exit 1;
+	error("Machine with host name $hostname already exists");
 }
 
 my $result = $onapp->createVM(
@@ -125,8 +124,7 @@ my $result = $onapp->createVM(
 );
 
 if(exists($result->{status})){
-	print STDERR "Error creating VM. OnApp said \"$result->{status_description}\"\n";
-	exit 1;
+	error("Error creating VM. OnApp said: \"$result->{status_description}\"");
 }
 
 my $vmID = $result->{id};
@@ -163,6 +161,12 @@ if (exists($opts{u})){
 
 my $ipAddress = $result->{ip_addresses}[0]->{ip_address}->{address};
 print $ipAddress;
+
+sub error{
+	my $message = shift;
+	print STDERR "ERROR: ".$message."\n";
+	exit 1;
+}
 
 sub usage{
 
