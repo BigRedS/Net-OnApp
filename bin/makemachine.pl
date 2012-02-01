@@ -63,6 +63,7 @@ unless( -f $onappCredentialsFile ){
 	system('stty','-echo');
 	$key = <>;
 	system('stty','echo');
+	print "\n";
 }else{
 	open(my $f, "<", "/home/avi/.onapp_credentials") or error("Error getting credentials from $onappCredentialsFile: $!");
 	($email, $key) = (<$f>);
@@ -160,7 +161,7 @@ if (exists($opts{u})){
 }
 
 my $ipAddress = $result->{ip_addresses}[0]->{ip_address}->{address};
-print $ipAddress;
+print "Created. IP:$ipAddress\n";
 
 sub error{
 	my $message = shift;
