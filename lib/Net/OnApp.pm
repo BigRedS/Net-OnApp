@@ -530,6 +530,33 @@ sub getTemplates{
 	my $return = $self->_tidyData($ref, 'id');
 	return $return;
 }
+=head2 HYPERVISORS
+
+=cut 
+
+sub getHypervisors{
+	my $self = shift;
+	return $self->_apiGet("hypervisors", "hypervisor");
+}
+#	my %args = @_;
+#	my $url = $self->getUrl("get", "hypervisors");
+#	my $ref = $self->_getRef($url);
+#	my $return = $self->_tidyData($ref, 'hypervisor');
+#	return $return;
+#}
+
+
+sub _apiGet{
+	my $self = shift;
+	my $toGet = shift;
+	my $containerName = shift;
+	my %args = @_;
+	my $url = $self->_getUrl("get", $toGet);
+	my $ref = $self->_getRef($url);
+	my $return = $self->_tidyData($ref, $containerName);
+	return $return;
+}
+
 
 =head1 PRIVATE METHODS
 
@@ -672,6 +699,9 @@ sub _getRef{
 	my $self = shift;
 	my $url = shift;
 	my $response = $self->{_userAgent}->get($url);
+	if ($response->{_rc} > 299){
+		$self->_error($response->{_msg});
+	}
 	my $body = $response->content;
 	my $ref = $self->_makeRef($body);
 	return $ref;
@@ -897,16 +927,17 @@ sub _getUrl{
 	my $what = shift;
 	my %uris = (
 		get => {
-			users	=> '/users.json',
-			user	=> '/users/',
-			vms	=> '/virtual_machines.json',
-			vm	=> '/virtual_machines/',
-			templates => '/templates.json',
+			users		=> '/users.json',
+			user		=> '/users/',
+			vms		=> '/virtual_machines.json',
+			vm		=> '/virtual_machines/',
+			templates 	=> '/templates.json',
+			hypervisors	=> 'settings/hypervisors.json',
 		},
 		set => {
-			users	=> '/users.json',
-			vms	=> '/virtual_machines.json',
-			templates => '/templates.json',
+			users		=> '/users.json',
+			vms		=> '/virtual_machines.json',
+			templates 	=> '/templates.json',
 		},
 	);
 	my $uri = $uris{$getOrSet}{$what};
@@ -921,6 +952,11 @@ sub _getUrl{
 
 }
 
+sub _error{
+	my $self = shift;
+	my $message = shift;
+	Carp::croak $message;
+}
 
 =head3 _getHash()
 
