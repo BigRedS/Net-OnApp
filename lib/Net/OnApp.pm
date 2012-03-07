@@ -536,10 +536,10 @@ sub getTemplates{
 
 sub getHypervisors{
 	my $self = shift;
-	return $self->_apiGet("hypervisors", "hypervisor");
+	return $self->_apiGet("hypervisors", "hypervisor", "label");
 }
 #	my %args = @_;
-#	my $url = $self->getUrl("get", "hypervisors");
+#	my $url = $self->_getUrl("get", "hypervisors");
 #	my $ref = $self->_getRef($url);
 #	my $return = $self->_tidyData($ref, 'hypervisor');
 #	return $return;
@@ -938,7 +938,7 @@ sub _getUrl{
 			vms		=> '/virtual_machines.json',
 			vm		=> '/virtual_machines/',
 			templates 	=> '/templates.json',
-			hypervisors	=> 'settings/hypervisors.json',
+			hypervisors	=> '/settings/hypervisors.json',
 		},
 		set => {
 			users		=> '/users.json',
